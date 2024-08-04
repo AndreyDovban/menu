@@ -1,0 +1,14 @@
+[
+	{
+		"title": "Mc",
+		"cmd": ["tilix", "-w", "~", "-e", "bash", "-c", "mc; exec bash"]
+	},
+	{
+		"title": "Htop",
+		"cmd": ["tilix", "-w", "~", "-e", "bash", "-c", "htop; exec bash"]
+	},
+	{
+		"title": "Tilix",
+		"cmd": ["tilix"]
+	}
+]

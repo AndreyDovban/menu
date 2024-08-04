@@ -33,14 +33,24 @@ func main() {
 			w2 := a.NewWindow("FORM")
 			w2.SetContent(widget.NewLabel("More content"))
 
-			label1 := widget.NewLabel("Title")
-			value1 := widget.NewEntry()
-			label2 := widget.NewLabel("Command")
-			value2 := widget.NewEntry()
-			label3 := widget.NewLabel("")
-			save := widget.NewButton("Save", func() { log.Println("Save") })
-			cancel := widget.NewButton("Cancel", func() { log.Println("Cancel") })
-			grid := container.New(layout.NewFormLayout(), label1, value1, label2, value2, s, label3, s, save, s, cancel)
+			title_label := widget.NewLabel("Title")
+			title_input := widget.NewEntry()
+			cmd_label := widget.NewLabel("Command")
+			cmd_input := widget.NewEntry()
+			empty := widget.NewLabel("")
+			save := widget.NewButton("Save", func() {
+				log.Println("Save")
+				arr := []string{"firefox"}
+				com, _ := commands.NewComand("TITLE", arr)
+				u := []commands.Command{*com}
+				write(u)
+				w2.Close()
+			})
+			cancel := widget.NewButton("Cancel", func() {
+				log.Println("Cancel")
+				w2.Close()
+			})
+			grid := container.New(layout.NewFormLayout(), title_label, title_input, cmd_label, cmd_input, s, empty, s, save, s, cancel)
 			w2.SetContent(grid)
 			w2.CenterOnScreen()
 			w2.Resize(fyne.NewSize(400, 200))
@@ -100,4 +110,14 @@ func read() ([]commands.Command, error) {
 		log.Println("!!", err.Error())
 	}
 	return coms, nil
+}
+
+func write(com []commands.Command) {
+	log.Println(com)
+	l, err := json.Marshal(com)
+	if err != nil {
+		log.Println(err.Error())
+	}
+	files.WriteFile(l, "data.json")
+
 }
