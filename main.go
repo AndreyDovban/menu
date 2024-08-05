@@ -38,7 +38,7 @@ func main() {
 		buttonts = append(buttonts, widget.NewButton(val.Title, execCommand(val.Cmd)))
 	}
 
-	mainWindow.SetContent(container.NewVBox(add, container.NewVBox(buttonts...), separ, ttt, separ, exit))
+	mainWindow.SetContent(container.NewVBox(add, container.NewVBox(buttonts...), separ, exit))
 
 	mainWindow.CenterOnScreen()
 	mainWindow.Resize(fyne.NewSize(300, 400))
