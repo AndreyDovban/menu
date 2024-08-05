@@ -7,6 +7,7 @@ import (
 	"menu/commands"
 	"menu/files"
 	"os/exec"
+	"strings"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -23,22 +24,15 @@ func main() {
 
 	open := false
 
-	add := widget.NewButton("Add Script", drawForm(app, separ, open))
+	buttons := container.NewVBox()
+
+	add := widget.NewButton("Add Script", drawForm(app, buttons, separ, open))
 
 	exit := widget.NewButton("Exit", func() { mainWindow.Close() })
 
-	obj, err := read()
-	if err != nil {
-		log.Println(err.Error())
-	}
+	drawButtons(buttons)
 
-	var buttonts []fyne.CanvasObject
-	for _, val := range obj {
-		log.Println(val)
-		buttonts = append(buttonts, widget.NewButton(val.Title, execCommand(val.Cmd)))
-	}
-
-	mainWindow.SetContent(container.NewVBox(add, container.NewVBox(buttonts...), separ, exit))
+	mainWindow.SetContent(container.NewVBox(add, buttons, separ, exit))
 
 	mainWindow.CenterOnScreen()
 	mainWindow.Resize(fyne.NewSize(300, 400))
@@ -48,13 +42,20 @@ func main() {
 	tidyUp()
 }
 
-// func drawButtons() func() {
-// 	return func() {
+func drawButtons(buttons *fyne.Container) {
+	buttons.RemoveAll()
+	obj, err := read()
+	if err != nil {
+		log.Println(err.Error())
+	}
 
-// 	}
-// }
+	for _, val := range obj {
+		log.Println(val)
+		buttons.Add(widget.NewButton(val.Title, execCommand(val.Cmd)))
+	}
+}
 
-func drawForm(app fyne.App, separ fyne.CanvasObject, open bool) func() {
+func drawForm(app fyne.App, buttons *fyne.Container, separ fyne.CanvasObject, open bool) func() {
 	return func() {
 		if !open {
 			w2 := app.NewWindow("FORM")
@@ -67,10 +68,9 @@ func drawForm(app fyne.App, separ fyne.CanvasObject, open bool) func() {
 			empty := widget.NewLabel("")
 			save := widget.NewButton("Save", func() {
 				log.Println("Save")
-				arr := []string{"chromium"}
-				com, _ := commands.NewComand("TITLE", arr)
-				u := []commands.Command{*com}
-				write(u)
+				arr := strings.Split(strings.TrimSpace(cmd_input.Text), " ")
+				com, _ := commands.NewComand(title_input.Text, arr)
+				write(*com)
 				w2.Close()
 			})
 			cancel := widget.NewButton("Cancel", func() {
@@ -86,6 +86,7 @@ func drawForm(app fyne.App, separ fyne.CanvasObject, open bool) func() {
 			w2.SetOnClosed(func() {
 				log.Println("close")
 				open = false
+				drawButtons(buttons)
 			})
 		}
 	}
@@ -119,12 +120,18 @@ func read() ([]commands.Command, error) {
 	return coms, nil
 }
 
-func write(com []commands.Command) {
-	log.Println(com)
-	l, err := json.Marshal(com)
+func write(com commands.Command) {
+
+	coms, err := read()
 	if err != nil {
 		log.Println(err.Error())
 	}
-	files.WriteFile(l, "data.json")
+	coms = append(coms, com)
+	l, err := json.Marshal(coms)
+	if err != nil {
+		log.Println(err.Error())
+	}
+	log.Println(coms)
 
+	files.WriteFile(l, "data.json")
 }
