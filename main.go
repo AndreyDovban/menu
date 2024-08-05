@@ -28,11 +28,18 @@ func main() {
 
 	add := widget.NewButton("Add Script", drawForm(app, buttons, separ, open))
 
+	test := widget.NewButton("TEST", func() {
+		// KeyDown(&fyne.KeyEvent{Name: "Enter"})
+		log.Println("work")
+	})
+
+	test.SetText("EEE")
+
 	exit := widget.NewButton("Exit", func() { mainWindow.Close() })
 
 	drawButtons(buttons)
 
-	mainWindow.SetContent(container.NewVBox(add, buttons, separ, exit))
+	mainWindow.SetContent(container.NewVBox(test, add, buttons, separ, exit))
 
 	mainWindow.CenterOnScreen()
 	mainWindow.Resize(fyne.NewSize(300, 400))
@@ -40,6 +47,10 @@ func main() {
 
 	app.Run()
 	tidyUp()
+}
+
+func KeyDown(ev *fyne.KeyEvent) {
+	log.Println(ev.Name)
 }
 
 func drawButtons(buttons *fyne.Container) {
