@@ -16,21 +16,48 @@ import (
 )
 
 func main() {
-	a := app.New()
-	w := a.NewWindow("MENU")
+	app := app.New()
+	mainWindow := app.NewWindow("MENU")
 
-	s := layout.NewSpacer()
+	separ := layout.NewSpacer()
 
 	open := false
+
+	add := widget.NewButton("Add Script", drawForm(app, separ, open))
+
+	exit := widget.NewButton("Exit", func() { mainWindow.Close() })
 
 	obj, err := read()
 	if err != nil {
 		log.Println(err.Error())
 	}
 
-	add := widget.NewButton("Add Script", func() {
+	var buttonts []fyne.CanvasObject
+	for _, val := range obj {
+		log.Println(val)
+		buttonts = append(buttonts, widget.NewButton(val.Title, execCommand(val.Cmd)))
+	}
+
+	mainWindow.SetContent(container.NewVBox(add, container.NewVBox(buttonts...), separ, ttt, separ, exit))
+
+	mainWindow.CenterOnScreen()
+	mainWindow.Resize(fyne.NewSize(300, 400))
+	mainWindow.Show()
+
+	app.Run()
+	tidyUp()
+}
+
+// func drawButtons() func() {
+// 	return func() {
+
+// 	}
+// }
+
+func drawForm(app fyne.App, separ fyne.CanvasObject, open bool) func() {
+	return func() {
 		if !open {
-			w2 := a.NewWindow("FORM")
+			w2 := app.NewWindow("FORM")
 			w2.SetContent(widget.NewLabel("More content"))
 
 			title_label := widget.NewLabel("Title")
@@ -40,7 +67,7 @@ func main() {
 			empty := widget.NewLabel("")
 			save := widget.NewButton("Save", func() {
 				log.Println("Save")
-				arr := []string{"firefox"}
+				arr := []string{"chromium"}
 				com, _ := commands.NewComand("TITLE", arr)
 				u := []commands.Command{*com}
 				write(u)
@@ -50,7 +77,7 @@ func main() {
 				log.Println("Cancel")
 				w2.Close()
 			})
-			grid := container.New(layout.NewFormLayout(), title_label, title_input, cmd_label, cmd_input, s, empty, s, save, s, cancel)
+			grid := container.New(layout.NewFormLayout(), title_label, title_input, cmd_label, cmd_input, separ, empty, separ, save, separ, cancel)
 			w2.SetContent(grid)
 			w2.CenterOnScreen()
 			w2.Resize(fyne.NewSize(400, 200))
@@ -61,27 +88,7 @@ func main() {
 				open = false
 			})
 		}
-
-	})
-
-	var buttonts []fyne.CanvasObject
-	buttonts = append(buttonts, add)
-	for _, val := range obj {
-		log.Println(val)
-		buttonts = append(buttonts, widget.NewButton(val.Title, execCommand(val.Cmd)))
 	}
-
-	exit := widget.NewButton("Exit", func() { w.Close() })
-	buttonts = append(buttonts, s, exit)
-
-	w.SetContent(container.NewVBox(buttonts...))
-
-	w.CenterOnScreen()
-	w.Resize(fyne.NewSize(300, 400))
-	w.Show()
-
-	a.Run()
-	tidyUp()
 }
 
 func execCommand(cmd []string) func() {
