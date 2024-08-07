@@ -13,6 +13,7 @@ import (
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/layout"
+	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/google/uuid"
 )
@@ -57,7 +58,7 @@ func drawButtons(buttons *fyne.Container) {
 	for _, val := range obj {
 		log.Println(val)
 
-		buttons.Add(container.New(layout.NewFormLayout(), widget.NewButton("X", func() { deleteCommand(val.Id, buttons) }), widget.NewButton(val.Title, execCommand(val.Cmd))))
+		buttons.Add(container.New(layout.NewFormLayout(), widget.NewButtonWithIcon("", theme.DeleteIcon(), func() { deleteCommand(val.Id, buttons) }), widget.NewButton(val.Title, execCommand(val.Cmd))))
 	}
 }
 
