@@ -12,6 +12,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
@@ -28,11 +29,11 @@ func main() {
 
 	buttons := container.NewVBox()
 
-	add := widget.NewButton("Add Script", drawForm(app, buttons, separ, open))
+	add := widget.NewButton("Add Script", drawForm(app, mainWindow, buttons, separ, open))
 
 	exit := widget.NewButton("Exit", func() { mainWindow.Close() })
 
-	drawButtons(buttons)
+	drawButtons(mainWindow, buttons)
 
 	mainWindow.SetContent(container.NewVBox(add, buttons, separ, exit))
 
@@ -48,43 +49,52 @@ func KeyDown(ev *fyne.KeyEvent) {
 	log.Println(ev.Name)
 }
 
-func drawButtons(buttons *fyne.Container) {
+func drawButtons(w fyne.Window, buttons *fyne.Container) {
 	buttons.RemoveAll()
 	obj, err := read()
 	if err != nil {
 		log.Println(err.Error())
+		dialog.ShowError(err, w)
 	}
 
 	for _, val := range obj {
 		log.Println(val)
 
-		buttons.Add(container.New(layout.NewFormLayout(), widget.NewButtonWithIcon("", theme.DeleteIcon(), func() { deleteCommand(val.Id, buttons) }), widget.NewButton(val.Title, execCommand(val.Cmd))))
+		buttons.Add(container.New(layout.NewFormLayout(), widget.NewButtonWithIcon("", theme.DeleteIcon(), func() { deleteCommand(w, val.Id, buttons) }), widget.NewButton(val.Title, execCommand(w, val.Cmd))))
 	}
 }
 
-func deleteCommand(id string, buttons *fyne.Container) {
-	log.Println(id)
-	var result []commands.Command
-	coms, err := read()
-	if err != nil {
-		log.Println(err.Error())
-	}
-	for i, val := range coms {
-		if val.Id == id {
-			result = append(coms[:i], coms[i+1:]...)
+func deleteCommand(w fyne.Window, id string, buttons *fyne.Container) {
+	dialog.ShowConfirm("DELETE", "Confirm deletion", func(b bool) {
+		if b {
+			log.Println(id)
+			var result []commands.Command
+			coms, err := read()
+			if err != nil {
+				log.Println(err.Error())
+				dialog.ShowError(err, w)
+			}
+			for i, val := range coms {
+				if val.Id == id {
+					result = append(coms[:i], coms[i+1:]...)
+				}
+			}
+			l, err := json.Marshal(result)
+			if err != nil {
+				log.Println(err.Error())
+				dialog.ShowError(err, w)
+			}
+			log.Println(coms)
+
+			files.WriteFile(l, "data.json")
+			drawButtons(w, buttons)
 		}
-	}
-	l, err := json.Marshal(result)
-	if err != nil {
-		log.Println(err.Error())
-	}
-	log.Println(coms)
 
-	files.WriteFile(l, "data.json")
-	drawButtons(buttons)
+	}, w)
+
 }
 
-func drawForm(app fyne.App, buttons *fyne.Container, separ fyne.CanvasObject, open bool) func() {
+func drawForm(app fyne.App, w fyne.Window, buttons *fyne.Container, separ fyne.CanvasObject, open bool) func() {
 	return func() {
 		if !open {
 			w2 := app.NewWindow("ADD SCRIPT FORM")
@@ -117,18 +127,19 @@ func drawForm(app fyne.App, buttons *fyne.Container, separ fyne.CanvasObject, op
 			w2.SetOnClosed(func() {
 				log.Println("close")
 				open = false
-				drawButtons(buttons)
+				drawButtons(w, buttons)
 			})
 		}
 	}
 }
 
-func execCommand(cmd []string) func() {
+func execCommand(w fyne.Window, cmd []string) func() {
 	return func() {
 		cmd := exec.Command(cmd[0], cmd[1:]...)
 		err := cmd.Run()
 		if err != nil {
-			log.Fatal(err)
+			log.Println(err.Error())
+			dialog.ShowError(err, w)
 		}
 	}
 }
@@ -141,12 +152,12 @@ func read() ([]commands.Command, error) {
 	var coms []commands.Command
 	file, err := files.ReadFile("./data.json")
 	if err != nil {
-		log.Println("!!", err.Error())
+		log.Println(err.Error())
 		return nil, err
 	}
 	err = json.Unmarshal(file, &coms)
 	if err != nil {
-		log.Println("!!", err.Error())
+		log.Println(err.Error())
 	}
 	return coms, nil
 }
