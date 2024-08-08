@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"menu/commands"
+	"menu/diagonal"
 	"menu/files"
 	"os/exec"
 	"strings"
@@ -60,7 +61,10 @@ func drawButtons(w fyne.Window, buttons *fyne.Container) {
 	for _, val := range obj {
 		log.Println(val)
 
-		buttons.Add(container.New(layout.NewFormLayout(), widget.NewButtonWithIcon("", theme.DeleteIcon(), func() { deleteCommand(w, val.Id, buttons) }), widget.NewButton(val.Title, execCommand(w, val.Cmd))))
+		del := widget.NewButtonWithIcon("", theme.DeleteIcon(), func() { deleteCommand(w, val.Id, buttons) })
+		ex := widget.NewButton(val.Title, execCommand(w, val.Cmd))
+
+		buttons.Add(container.New(&diagonal.Diagonal{}, del, ex))
 	}
 }
 
