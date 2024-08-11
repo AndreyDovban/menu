@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"menu/commands"
-	"menu/diagonal"
 	"menu/files"
 	"os/exec"
 	"strings"
@@ -64,7 +63,7 @@ func drawButtons(w fyne.Window, buttons *fyne.Container) {
 		del := widget.NewButtonWithIcon("", theme.DeleteIcon(), func() { deleteCommand(w, val.Id, buttons) })
 		ex := widget.NewButton(val.Title, execCommand(w, val.Cmd))
 
-		buttons.Add(container.New(&diagonal.Diagonal{}, del, ex))
+		buttons.Add(container.New(layout.NewFormLayout(), del, ex))
 	}
 }
 
@@ -114,7 +113,11 @@ func drawForm(app fyne.App, w fyne.Window, buttons *fyne.Container, separ fyne.C
 				id := uuid.New().String()
 				log.Println("&&&", id)
 				arr := strings.Split(strings.TrimSpace(cmd_input.Text), " ")
-				com, _ := commands.NewComand(id, title_input.Text, arr)
+				com, err := commands.NewComand(id, title_input.Text, arr)
+				if err != nil {
+					dialog.ShowError(err, w2)
+					return
+				}
 				write(*com)
 				w2.Close()
 			})
@@ -162,6 +165,7 @@ func read() ([]commands.Command, error) {
 	err = json.Unmarshal(file, &coms)
 	if err != nil {
 		log.Println(err.Error())
+		return nil, err
 	}
 	return coms, nil
 }

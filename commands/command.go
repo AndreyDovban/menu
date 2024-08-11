@@ -16,7 +16,10 @@ func NewComand(id string, title string, cmd []string) (*Command, error) {
 		return nil, errors.New("TITLE_EMPTY_STING")
 	}
 	if len(cmd) == 0 {
-		return nil, errors.New("TITLE_EMPTY_STING")
+		return nil, errors.New("COMMAND_EMPTY_STING")
+	}
+	if cmd[0] == "" {
+		return nil, errors.New("COMMAND_EMPTY_STING")
 	}
 
 	newCommnd := &Command{Id: id, Title: title, Cmd: cmd}
