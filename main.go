@@ -1,11 +1,9 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
-	"menu/commands"
-	"menu/files"
+	"menu/command"
 	"os/exec"
 	"strings"
 
@@ -22,109 +20,82 @@ import (
 func main() {
 	app := app.New()
 	mainWindow := app.NewWindow("MENU")
-
 	separ := layout.NewSpacer()
+
+	vault := command.NewVault()
 
 	open := false
 
 	buttons := container.NewVBox()
 
-	add := widget.NewButton("Add Script", drawForm(app, mainWindow, buttons, separ, open))
+	add_but := widget.NewButton("Add Script", drawForm(app, mainWindow, buttons, separ, open, vault))
 
-	exit := widget.NewButton("Exit", func() { mainWindow.Close() })
+	exit_but := widget.NewButton("Exit", func() { mainWindow.Close() })
 
-	drawButtons(mainWindow, buttons)
+	drawButtons(mainWindow, buttons, vault)
 
-	mainWindow.SetContent(container.NewVBox(add, buttons, separ, exit))
+	mainWindow.SetContent(container.NewVBox(add_but, buttons, separ, exit_but))
 
 	mainWindow.CenterOnScreen()
 	mainWindow.Resize(fyne.NewSize(300, 400))
 	mainWindow.Show()
 
 	app.Run()
-	tidyUp()
 }
 
-func KeyDown(ev *fyne.KeyEvent) {
-	log.Println(ev.Name)
-}
-
-func drawButtons(w fyne.Window, buttons *fyne.Container) {
+func drawButtons(w fyne.Window, buttons *fyne.Container, vault *command.Vault) {
 	buttons.RemoveAll()
-	obj, err := read()
-	if err != nil {
-		log.Println(err.Error())
-		dialog.ShowError(err, w)
-	}
 
-	for _, val := range obj {
-		log.Println(val)
-
-		del := widget.NewButtonWithIcon("", theme.DeleteIcon(), func() { deleteCommand(w, val.Id, buttons) })
+	for _, val := range vault.Commands {
+		del := widget.NewButtonWithIcon("", theme.DeleteIcon(), func() { deleteCommand(w, val.Id, buttons, vault) })
 		ex := widget.NewButton(val.Title, execCommand(w, val.Cmd))
 
 		buttons.Add(container.New(layout.NewFormLayout(), del, ex))
 	}
+
 }
 
-func deleteCommand(w fyne.Window, id string, buttons *fyne.Container) {
+func deleteCommand(w fyne.Window, id string, buttons *fyne.Container, vault *command.Vault) {
 	dialog.ShowConfirm("DELETE", "Confirm deletion", func(b bool) {
 		if b {
-			log.Println(id)
-			var result []commands.Command
-			coms, err := read()
-			if err != nil {
-				log.Println(err.Error())
-				dialog.ShowError(err, w)
+			isDelete := vault.DeleteCommadById(id)
+			if isDelete {
+				drawButtons(w, buttons, vault)
+			} else {
+				fmt.Println("Ненайдено")
 			}
-			for i, val := range coms {
-				if val.Id == id {
-					result = append(coms[:i], coms[i+1:]...)
-				}
-			}
-			l, err := json.Marshal(result)
-			if err != nil {
-				log.Println(err.Error())
-				dialog.ShowError(err, w)
-			}
-			log.Println(coms)
-
-			files.WriteFile(l, "data.json")
-			drawButtons(w, buttons)
 		}
 
 	}, w)
 
 }
 
-func drawForm(app fyne.App, w fyne.Window, buttons *fyne.Container, separ fyne.CanvasObject, open bool) func() {
+func drawForm(app fyne.App, w fyne.Window, buttons *fyne.Container, separ fyne.CanvasObject, open bool, vault *command.Vault) func() {
 	return func() {
 		if !open {
 			w2 := app.NewWindow("ADD SCRIPT FORM")
-			w2.SetContent(widget.NewLabel("More content"))
 
 			title_label := widget.NewLabel("Title")
 			title_input := widget.NewEntry()
 			cmd_label := widget.NewLabel("Command")
 			cmd_input := widget.NewEntry()
 			empty := widget.NewLabel("")
+
 			save := widget.NewButton("Save", func() {
-				log.Println("Save")
 				id := uuid.New().String()
-				log.Println("&&&", id)
 				arr := strings.Split(strings.TrimSpace(cmd_input.Text), " ")
-				com, err := commands.NewComand(id, title_input.Text, arr)
+				com, err := command.NewComand(id, title_input.Text, arr)
 				if err != nil {
 					dialog.ShowError(err, w2)
 					return
 				}
-				write(*com)
+				vault.AddCommand(*com)
 				w2.Close()
 			})
 			cancel := widget.NewButton("Cancel", func() {
-				log.Println("Cancel")
 				w2.Close()
 			})
+
 			grid := container.New(layout.NewFormLayout(), title_label, title_input, cmd_label, cmd_input, separ, empty, separ, save, separ, cancel)
 			w2.SetContent(grid)
 			w2.CenterOnScreen()
@@ -132,9 +103,8 @@ func drawForm(app fyne.App, w fyne.Window, buttons *fyne.Container, separ fyne.C
 			w2.Show()
 			open = true
 			w2.SetOnClosed(func() {
-				log.Println("close")
 				open = false
-				drawButtons(w, buttons)
+				drawButtons(w, buttons, vault)
 			})
 		}
 	}
@@ -149,39 +119,4 @@ func execCommand(w fyne.Window, cmd []string) func() {
 			dialog.ShowError(err, w)
 		}
 	}
-}
-
-func tidyUp() {
-	fmt.Println("Exited")
-}
-
-func read() ([]commands.Command, error) {
-	var coms []commands.Command
-	file, err := files.ReadFile("./data.json")
-	if err != nil {
-		log.Println(err.Error())
-		return nil, err
-	}
-	err = json.Unmarshal(file, &coms)
-	if err != nil {
-		log.Println(err.Error())
-		return nil, err
-	}
-	return coms, nil
-}
-
-func write(com commands.Command) {
-
-	coms, err := read()
-	if err != nil {
-		log.Println(err.Error())
-	}
-	coms = append(coms, com)
-	l, err := json.Marshal(coms)
-	if err != nil {
-		log.Println(err.Error())
-	}
-	log.Println(coms)
-
-	files.WriteFile(l, "data.json")
 }
