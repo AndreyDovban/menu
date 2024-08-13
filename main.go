@@ -19,7 +19,14 @@ import (
 
 func main() {
 	app := app.New()
+
 	mainWindow := app.NewWindow("MENU")
+	ic, err := fyne.LoadResourceFromPath("./logo1.png")
+	if err != nil {
+		log.Println(err.Error())
+	}
+	mainWindow.SetIcon(ic)
+
 	separ := layout.NewSpacer()
 
 	vault := command.NewVault()
@@ -48,25 +55,10 @@ func drawButtons(w fyne.Window, buttons *fyne.Container, vault *command.Vault) {
 
 	for _, val := range vault.Commands {
 		del := widget.NewButtonWithIcon("", theme.DeleteIcon(), func() { deleteCommand(w, val.Id, buttons, vault) })
-		ex := widget.NewButton(val.Title, execCommand(w, val.Cmd))
+		ex := widget.NewButton(val.Title, func() { execCommand(w, val.Cmd) })
 
 		buttons.Add(container.New(layout.NewFormLayout(), del, ex))
 	}
-
-}
-
-func deleteCommand(w fyne.Window, id string, buttons *fyne.Container, vault *command.Vault) {
-	dialog.ShowConfirm("DELETE", "Confirm deletion", func(b bool) {
-		if b {
-			isDelete := vault.DeleteCommadById(id)
-			if isDelete {
-				drawButtons(w, buttons, vault)
-			} else {
-				fmt.Println("Ненайдено")
-			}
-		}
-
-	}, w)
 
 }
 
@@ -82,16 +74,9 @@ func drawForm(app fyne.App, w fyne.Window, buttons *fyne.Container, separ fyne.C
 			empty := widget.NewLabel("")
 
 			save := widget.NewButton("Save", func() {
-				id := uuid.New().String()
-				arr := strings.Split(strings.TrimSpace(cmd_input.Text), " ")
-				com, err := command.NewComand(id, title_input.Text, arr)
-				if err != nil {
-					dialog.ShowError(err, w2)
-					return
-				}
-				vault.AddCommand(*com)
-				w2.Close()
+				addCommand(w2, title_input.Text, cmd_input.Text, vault)
 			})
+
 			cancel := widget.NewButton("Cancel", func() {
 				w2.Close()
 			})
@@ -110,13 +95,38 @@ func drawForm(app fyne.App, w fyne.Window, buttons *fyne.Container, separ fyne.C
 	}
 }
 
-func execCommand(w fyne.Window, cmd []string) func() {
-	return func() {
-		cmd := exec.Command(cmd[0], cmd[1:]...)
-		err := cmd.Run()
-		if err != nil {
-			log.Println(err.Error())
-			dialog.ShowError(err, w)
+func addCommand(w fyne.Window, title_text string, text_cmd string, vault *command.Vault) {
+	id := uuid.New().String()
+	arr := strings.Split(strings.TrimSpace(text_cmd), " ")
+	com, err := command.NewComand(id, title_text, arr)
+	if err != nil {
+		dialog.ShowError(err, w)
+		return
+	}
+	vault.AddCommand(*com)
+	w.Close()
+}
+
+func deleteCommand(w fyne.Window, id string, buttons *fyne.Container, vault *command.Vault) {
+	dialog.ShowConfirm("DELETE", "Confirm deletion", func(b bool) {
+		if b {
+			isDelete := vault.DeleteCommadById(id)
+			if isDelete {
+				drawButtons(w, buttons, vault)
+			} else {
+				fmt.Println("Ненайдено")
+			}
 		}
+
+	}, w)
+
+}
+
+func execCommand(w fyne.Window, cmd []string) {
+	executer := exec.Command(cmd[0], cmd[1:]...)
+	err := executer.Run()
+	if err != nil {
+		log.Println(err.Error())
+		dialog.ShowError(err, w)
 	}
 }
