@@ -21,7 +21,7 @@ func main() {
 	app := app.New()
 
 	mainWindow := app.NewWindow("MENU")
-	ic, err := fyne.LoadResourceFromPath("./logo1.png")
+	ic, err := fyne.LoadResourceFromPath("./logo.png")
 	if err != nil {
 		log.Println(err.Error())
 	}
