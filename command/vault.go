@@ -4,20 +4,29 @@ import (
 	"encoding/json"
 	"fmt"
 	"menu/files"
+
 	"time"
 )
 
 type Vault struct {
-	Commands []Command `json:"acccounts"`
+	Commands []Command `json:"commands"`
 	UpdateAt time.Time `json:"updateAt"`
 }
 
-func NewVault() *Vault {
-	data, err := files.ReadFile("data.json")
+type VaultWithDb struct {
+	Vault
+	db files.JsonDb
+}
+
+func NewVault(db *files.JsonDb) *VaultWithDb {
+	data, err := db.Read()
 	if err != nil {
-		return &Vault{
-			Commands: []Command{},
-			UpdateAt: time.Now(),
+		return &VaultWithDb{
+			Vault: Vault{
+				Commands: []Command{},
+				UpdateAt: time.Now(),
+			},
+			db: *db,
 		}
 	}
 
@@ -26,24 +35,30 @@ func NewVault() *Vault {
 	err = json.Unmarshal(data, &vault)
 	if err != nil {
 		fmt.Println(err.Error())
-		return &Vault{
-			Commands: []Command{},
-			UpdateAt: time.Now(),
+		return &VaultWithDb{
+			Vault: Vault{
+				Commands: []Command{},
+				UpdateAt: time.Now(),
+			},
+			db: *db,
 		}
 	}
 
-	return &vault
+	return &VaultWithDb{
+		Vault: vault,
+		db:    *db,
+	}
 }
 
-func (vault *Vault) AddCommand(cmd Command) {
-	vault.Commands = append(vault.Commands, cmd)
-	vault.save()
+func (vdb *VaultWithDb) AddCommand(cmd Command) {
+	vdb.Vault.Commands = append(vdb.Vault.Commands, cmd)
+	vdb.save()
 }
 
-func (vault *Vault) DeleteCommadById(id string) bool {
+func (vdb *VaultWithDb) DeleteCommadById(id string) bool {
 	var commands []Command
 	isDelete := false
-	for _, com := range vault.Commands {
+	for _, com := range vdb.Vault.Commands {
 		if com.Id != id {
 			commands = append(commands, com)
 			continue
@@ -51,8 +66,8 @@ func (vault *Vault) DeleteCommadById(id string) bool {
 		isDelete = true
 	}
 
-	vault.Commands = commands
-	vault.save()
+	vdb.Vault.Commands = commands
+	vdb.save()
 
 	return isDelete
 }
@@ -67,11 +82,11 @@ func (vault *Vault) ToBytes() ([]byte, error) {
 	return file, nil
 }
 
-func (vault *Vault) save() {
-	vault.UpdateAt = time.Now()
-	data, err := vault.ToBytes()
+func (vdb *VaultWithDb) save() {
+	vdb.Vault.UpdateAt = time.Now()
+	data, err := vdb.Vault.ToBytes()
 	if err != nil {
 		fmt.Println(err.Error())
 	}
-	files.WriteFile(data, "data.json")
+	vdb.db.Write(data)
 }

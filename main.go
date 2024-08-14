@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"menu/command"
+	"menu/files"
 	"os/exec"
 	"strings"
 
@@ -29,7 +30,7 @@ func main() {
 
 	separ := layout.NewSpacer()
 
-	vault := command.NewVault()
+	vault := command.NewVault(files.NewJsonDb("data.json"))
 
 	open := false
 
@@ -50,7 +51,7 @@ func main() {
 	app.Run()
 }
 
-func drawButtons(w fyne.Window, buttons *fyne.Container, vault *command.Vault) {
+func drawButtons(w fyne.Window, buttons *fyne.Container, vault *command.VaultWithDb) {
 	buttons.RemoveAll()
 
 	for _, val := range vault.Commands {
@@ -62,7 +63,7 @@ func drawButtons(w fyne.Window, buttons *fyne.Container, vault *command.Vault) {
 
 }
 
-func drawForm(app fyne.App, w fyne.Window, buttons *fyne.Container, separ fyne.CanvasObject, open bool, vault *command.Vault) func() {
+func drawForm(app fyne.App, w fyne.Window, buttons *fyne.Container, separ fyne.CanvasObject, open bool, vault *command.VaultWithDb) func() {
 	return func() {
 		if !open {
 			w2 := app.NewWindow("ADD SCRIPT FORM")
@@ -95,7 +96,7 @@ func drawForm(app fyne.App, w fyne.Window, buttons *fyne.Container, separ fyne.C
 	}
 }
 
-func addCommand(w fyne.Window, title_text string, text_cmd string, vault *command.Vault) {
+func addCommand(w fyne.Window, title_text string, text_cmd string, vault *command.VaultWithDb) {
 	id := uuid.New().String()
 	arr := strings.Split(strings.TrimSpace(text_cmd), " ")
 	com, err := command.NewComand(id, title_text, arr)
@@ -107,7 +108,7 @@ func addCommand(w fyne.Window, title_text string, text_cmd string, vault *comman
 	w.Close()
 }
 
-func deleteCommand(w fyne.Window, id string, buttons *fyne.Container, vault *command.Vault) {
+func deleteCommand(w fyne.Window, id string, buttons *fyne.Container, vault *command.VaultWithDb) {
 	dialog.ShowConfirm("DELETE", "Confirm deletion", func(b bool) {
 		if b {
 			isDelete := vault.DeleteCommadById(id)
