@@ -3,10 +3,14 @@ package command
 import (
 	"encoding/json"
 	"fmt"
-	"menu/files"
 
 	"time"
 )
+
+type Db interface {
+	Read() ([]byte, error)
+	Write([]byte)
+}
 
 type Vault struct {
 	Commands []Command `json:"commands"`
@@ -15,10 +19,10 @@ type Vault struct {
 
 type VaultWithDb struct {
 	Vault
-	db files.JsonDb
+	db Db
 }
 
-func NewVault(db *files.JsonDb) *VaultWithDb {
+func NewVault(db Db) *VaultWithDb {
 	data, err := db.Read()
 	if err != nil {
 		return &VaultWithDb{
@@ -26,7 +30,7 @@ func NewVault(db *files.JsonDb) *VaultWithDb {
 				Commands: []Command{},
 				UpdateAt: time.Now(),
 			},
-			db: *db,
+			db: db,
 		}
 	}
 
@@ -40,13 +44,13 @@ func NewVault(db *files.JsonDb) *VaultWithDb {
 				Commands: []Command{},
 				UpdateAt: time.Now(),
 			},
-			db: *db,
+			db: db,
 		}
 	}
 
 	return &VaultWithDb{
 		Vault: vault,
-		db:    *db,
+		db:    db,
 	}
 }
 
