@@ -46,6 +46,7 @@ func main() {
 
 	mainWindow.CenterOnScreen()
 	mainWindow.Resize(fyne.NewSize(300, 400))
+	mainWindow.SetMaster()
 	mainWindow.Show()
 
 	app.Run()
