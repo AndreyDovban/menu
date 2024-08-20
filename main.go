@@ -110,7 +110,7 @@ func addCommand(w fyne.Window, title_text string, text_cmd string, vault *comman
 }
 
 func deleteCommand(w fyne.Window, id string, buttons *fyne.Container, vault *command.VaultWithDb) {
-	dialog.ShowConfirm("DELETE", "Confirm deletion", func(b bool) {
+	dialog.ShowCustomConfirm("Внимание !!!", "Подтвердить", "Отмена", widget.NewLabel("Вы хотите удалить скрипт?"), func(b bool) {
 		if b {
 			isDelete := vault.DeleteCommadById(id)
 			if isDelete {
